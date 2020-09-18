@@ -1,15 +1,21 @@
 """ This script creates a sqlserver database version of the hurdat2 files that are relational and utilize geometry
 objects for fast spatial querying.
 """
-# standard library imports
+#%% standard library imports
 import pandas as pd
 from dateutil.parser import isoparse
 
-# third party imports
+#%% third party imports
 import sqlalchemy as sal
 from sqlalchemy import create_engine
 
-# %% dictionaries to code the identifier and status columns
+#%% input parameters: change these paths if you have downloaded the files to a different area
+atlantic_path = "resources//hurdat2-1851-2019-052520.txt"
+pacific_path = "resources//hurdat2-nepac-1949-2019-042320.txt"
+sqlserver = "sqlservername"
+database = "databasename"
+
+#%% dictionaries to code the identifier and status columns
 record_identifier = {
     "C": 0,  # closest approach to a coast, not followed by a landfall
     "G": 1,  # genesis
@@ -132,7 +138,10 @@ def clean_data(events, points):
             "nw_64kt_radii_max_nm"
         ]
     )
-    points["location"] = "POINT(" + points["longitude"].astype(str) + " " + points["latitude"].astype(str) + ")"
+    # create time and geography text to process into geography objects in sql server.
+    points["location"] = "POINT(" + points["longitude"].astype(str) + " " + points["latitude"].astype(str) + " " \
+                         + points["max_wind_knots"].astype(str).replace("-99", "NULL") + " " \
+                         + points["min_pressure_mb"].astype(str).replace("-999", "NULL") + ")"
     points["point_time"] = points["year"] + "-" + points["month"] + "-" + points["day"] + "T" \
         + points["hours_UTC"] + ":" + points["minutes_UTC"] + ":00.000Z"
     points["point_time"] = points["point_time"].apply(isoparse)
@@ -144,6 +153,7 @@ def clean_data(events, points):
         axis=1,
         inplace=True
     )
+    # clean up values
     points.replace(
         {
             "identifier": record_identifier,
@@ -175,9 +185,6 @@ def clean_data(events, points):
 
 
 if __name__ == "__main__":
-    # TODO: change these paths if you have downloaded the files to a different area
-    atlantic_path = "resources//hurdat2-1851-2019-052520.txt"
-    pacific_path = "resources//hurdat2-nepac-1949-2019-042320.txt"
     #%% process Atlantic basin HURDAT2 file
     atlantic_headers, atlantic_data = process_file(atlantic_path)
     pacific_headers, pacific_data = process_file(pacific_path)
@@ -185,11 +192,10 @@ if __name__ == "__main__":
     atlantic_headers, atlantic_data = clean_data(atlantic_headers, atlantic_data)
     pacific_headers, pacific_data = clean_data(pacific_headers, pacific_data)
     #%% load data into sql server
-    # TODO: change sqlservername and databasename below
-    engine = create_engine(
-        "mssql+pyodbc://sqlservername/databasename?Driver=ODBC Driver 17 for SQL Server?Trusted_Connection=yes",
-        fast_executemany=True
+    conn_string = (
+        "mssql+pyodbc://" + sqlserver + "/" + database + "?Driver=ODBC Driver 17 for SQL Server?Trusted_Connection=yes"
     )
+    engine = create_engine(conn_string, fast_executemany=True)
     conn = engine.connect()
     table_types = {
         "event_id": sal.types.NCHAR(length=8),
