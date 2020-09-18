@@ -17,10 +17,18 @@ include them here because I do not have a license for them. They can be download
 SQL server driver is also necessary. This script was written with ODBC Driver 17 for SQL Server installed which can be 
 downloaded from Microsoft.
 
+# Example Query
+Once the databases have been setup by the script, spatial queries can be quickly performed. For example, if we wanted
+to know the hurricanes that have passed within 50 miles of San Juan, Puerto Rico. (18.396, -66.060) we could write a 
+query like so:
+```
+SELECT event_id, name, start_time from Historical_HU 
+WHERE geography::Point(18.396, -66.060, 4326).STBuffer(50*1609).STIntersects(path_geo) = 1
+```
+This query took 164 milliseconds on a fairly modest sqlserver. 
 # Contribute
 * Currently there are 4 invalid codes found in the pacific file. These are currently assigned null values. It would be 
 great if these errors could be fixed.
 * It might be useful to have the underlying pandas datasets be made available if a user wanted to import this script 
 into their own code.
-* Example queries of the resulting database
 * Add functions to calculate interpolated values along the path.
