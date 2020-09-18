@@ -1,8 +1,13 @@
+""" This script creates a sqlserver database version of the hurdat2 files that are relational and utilize geometry
+objects for fast spatial querying.
+"""
 # standard library imports
 import pandas as pd
-from sqlalchemy import create_engine
 from dateutil.parser import isoparse
+
+# third party imports
 import sqlalchemy as sal
+from sqlalchemy import create_engine
 
 # %% dictionaries to code the identifier and status columns
 record_identifier = {
@@ -37,6 +42,7 @@ status = {
 
 
 def process_file(file_path):
+    """ Code"""
     file_headers = []
     file_data = []
     file = open(file_path, 'r')
