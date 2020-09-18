@@ -20,3 +20,5 @@ include them here because I do not have a license for them. They can be download
 great if these errors could be fixed.
 * It might be useful to have the underlying pandas datasets be made available if a user wanted to import this script 
 into their own code.
+* Example queries of the resulting database
+* Add functions to calculate interpolated values along the path.
