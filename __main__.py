@@ -42,7 +42,7 @@ status = {
 
 
 def process_file(file_path):
-    """ Code"""
+    """ Code for processing the hurdat2 text files."""
     file_headers = []
     file_data = []
     file = open(file_path, 'r')
@@ -91,6 +91,7 @@ def process_file(file_path):
 
 
 def clean_data(events, points):
+    """function for cleansing the data"""
     events = pd.DataFrame(
         events,
         columns=[
@@ -174,6 +175,7 @@ def clean_data(events, points):
 
 
 if __name__ == "__main__":
+    # TODO: change these paths if you have downloaded the files to a different area
     atlantic_path = "resources//hurdat2-1851-2019-052520.txt"
     pacific_path = "resources//hurdat2-nepac-1949-2019-042320.txt"
     #%% process Atlantic basin HURDAT2 file
@@ -183,8 +185,9 @@ if __name__ == "__main__":
     atlantic_headers, atlantic_data = clean_data(atlantic_headers, atlantic_data)
     pacific_headers, pacific_data = clean_data(pacific_headers, pacific_data)
     #%% load data into sql server
+    # TODO: change sqlservername and databasename below
     engine = create_engine(
-        "mssql+pyodbc://bhsiairsql03/FinancialModuleTesting?Driver=ODBC Driver 17 for SQL Server?Trusted_Connection=yes",
+        "mssql+pyodbc://sqlservername/databasename?Driver=ODBC Driver 17 for SQL Server?Trusted_Connection=yes",
         fast_executemany=True
     )
     conn = engine.connect()

@@ -13,7 +13,9 @@ the script. There will be 3 items that need to be updated in the script to run o
 include them here because I do not have a license for them. They can be downloaded here 
 (https://www.nhc.noaa.gov/data/#hurdat). There are currently 2 files, one for the pacific and one for the atlantic.
     1. open a terminal window and navigate to the download directory. Type ```python HURDAT2``` to run the script
-1. Software dependencies. This script requires pandas 1.1.2 and sqlalchemy 1.3.19
+1. Software dependencies. This script requires python 3.7, pandas 1.1.2,  and sqlalchemy 1.3.19. A relatively recent 
+SQL server driver is also necessary. This script was written with ODBC Driver 17 for SQL Server installed which can be 
+downloaded from Microsoft.
 
 # Contribute
 * Currently there are 4 invalid codes found in the pacific file. These are currently assigned null values. It would be 
