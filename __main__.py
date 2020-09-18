@@ -224,19 +224,57 @@ if __name__ == "__main__":
     atlantic_headers.to_sql("Historical_HU", con=engine, if_exists="replace", dtype=table_types, index=False)
     pacific_headers.to_sql("Historical_HU", con=engine, if_exists="append", dtype=table_types, index=False)
 
+    record = pd.DataFrame.from_dict(record_identifier, orient="index").reset_index()[:-1]
+    record.columns = ["description", "record_id"]
+    record["description"] = [
+        "closest approach to a coast, not followed by a landfall",
+        "genesis",
+        "an intensity peak in terms of both pressure and wind",
+        "landfall",
+        "minimum central pressure",
+        "additional detail on intensity of cyclone when rapid changes are underway",
+        "change in status of the system",
+        "provides additional detail on the track (position) of the cyclone",
+        "maximum sustained wind speed"
+    ]
+    record.to_sql("HU_points_identifier", con=engine, if_exists="replace",
+                  dtype={"record_id": sal.types.INTEGER(), "description": sal.types.NVARCHAR(length=100)}, index=False)
+
+    df_status = pd.DataFrame.from_dict(status, orient="index").reset_index()[:-5]
+    df_status.columns = ["description", "status_id"]
+    df_status["description"] = [
+        "tropical cyclone of tropical depression intensity (<34 knots)",
+        "tropical cyclone of tropical storm intensity (34-63 knots)",
+        "tropical cyclone of hurricane intensity (>= 64 knots)",
+        "extratropical cyclone of any intensity",
+        "subtropical cyclone of subtropical depression intensity (<34 knots)",
+        "subtropical cyclone of subtropical storm intensity (>= 34 knots)",
+        "low that is neither a tropical cyclone, a subtropical cyclone, nor an extratropical cyclone",
+        "a tropical wave",
+        "disturbance of any intensity",
+    ]
+    df_status.to_sql("HU_points_status", con=engine, if_exists="replace",
+                     dtype={"status_id": sal.types.INTEGER(), "description": sal.types.NVARCHAR(length=100)}, index=False)
     #%% create keys, indexes, and geo datatypes
     sql = (
-        "ALTER TABLE Historical_HU ALTER column event_id nchar(8) not null; "
+        "ALTER TABLE Historical_HU ALTER COLUMN event_id nchar(8) NOT NULL; "
         "ALTER TABLE Historical_HU_points ADD point_id int NOT NULL IDENTITY;"
+        "ALTER TABLE HU_points_identifier ALTER COLUMN record_id int NOT NULL;"
+        "ALTER TABLE HU_points_status ALTER COLUMN status_id int NOT NULL;"
     )
     conn.execute(sql)
     sql = (
         "ALTER TABLE Historical_HU "
         "ADD CONSTRAINT PK_Historical_HU_event_id PRIMARY KEY CLUSTERED (event_id), path_geo geography;"
+        "ALTER TABLE HU_points_identifier "
+        "ADD CONSTRAINT PK_points_identifier PRIMARY KEY (record_id);"
+        "ALTER TABLE HU_points_status "
+        "ADD CONSTRAINT PK_points_status PRIMARY KEY (status_id);"
         "ALTER TABLE Historical_HU_points "
         "ADD CONSTRAINT PK_Historical_HU_point_id PRIMARY KEY CLUSTERED (point_id), "
-        "FOREIGN KEY (event_id) REFERENCES Historical_HU(event_id), location_geo geography;"
-
+        "FOREIGN KEY (event_id) REFERENCES Historical_HU(event_id), "
+        "FOREIGN KEY (identifier) REFERENCES HU_points_identifier(record_id),"
+        "FOREIGN KEY (status) REFERENCES HU_points_status(status_id), location_geo geography;"
     )
     conn.execute(sql)
     sql = (
