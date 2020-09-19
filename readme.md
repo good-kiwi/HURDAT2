@@ -32,4 +32,4 @@ Items below are currently being worked on and could use help.
 * [x] 16 invalid storm paths are created. 10 from the atlantic and 6 from the eastern pacific. Currently stored in the 
 database but will cause query errors as the geography is not valid. Mostly caused by observations of a storm 
 being in the exact same location.
-* [ ] include pickle of created pandas dataframes in distribution.
+* [x] include pickle of created pandas dataframes in distribution.
