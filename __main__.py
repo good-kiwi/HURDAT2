@@ -208,12 +208,18 @@ def clean_data(events, points):
 
 
 if __name__ == "__main__":
-    #%% process Atlantic basin HURDAT2 file
+    #%% process each basin's HURDAT2 file
     atlantic_headers, atlantic_data = process_file(atlantic_path)
     pacific_headers, pacific_data = process_file(pacific_path)
+
     #%% clean data
     atlantic_headers, atlantic_data = clean_data(atlantic_headers, atlantic_data)
     pacific_headers, pacific_data = clean_data(pacific_headers, pacific_data)
+
+    #%% combined the dataframes
+    headers = pd.concat([atlantic_headers, pacific_headers])
+    data = pd.concat([atlantic_data, pacific_data])
+
     #%% load data into sql server
     conn_string = (
         "mssql+pyodbc://" + sqlserver + "/" + database + "?Driver=ODBC Driver 17 for SQL Server?Trusted_Connection=yes"
@@ -241,8 +247,7 @@ if __name__ == "__main__":
         "location": sal.types.NVARCHAR(length=100),
         "point_time": sal.DateTime()
     }
-    atlantic_data.to_sql("Historical_HU_points", con=engine, if_exists="replace", dtype=table_types, index=False)
-    pacific_data.to_sql("Historical_HU_points", con=engine, if_exists="append", dtype=table_types, index=False)
+    data.to_sql("Historical_HU_points", con=engine, if_exists="replace", dtype=table_types, index=False)
     table_types = {
         "event_id": sal.types.NCHAR(length=8),
         "basin": sal.types.NVARCHAR(length=2),
@@ -250,8 +255,7 @@ if __name__ == "__main__":
         "start_time": sal.DateTime(),
         "path": sal.types.NVARCHAR()
     }
-    atlantic_headers.to_sql("Historical_HU", con=engine, if_exists="replace", dtype=table_types, index=False)
-    pacific_headers.to_sql("Historical_HU", con=engine, if_exists="append", dtype=table_types, index=False)
+    headers.to_sql("Historical_HU", con=engine, if_exists="replace", dtype=table_types, index=False)
 
     record = pd.DataFrame.from_dict(record_identifier, orient="index").reset_index()[:-1]
     record.columns = ["description", "record_id"]
