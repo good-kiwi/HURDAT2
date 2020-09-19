@@ -28,8 +28,8 @@ WHERE geography::Point(18.396, -66.060, 4326).STBuffer(50*1609).STIntersects(pat
 This query took 164 milliseconds on a fairly modest sqlserver. 
 # Contribute
 Items below are currently being worked on and could use help.
-* [ ] 4 invalid codes found in the pacific file currently mapped to null
-* [ ] 16 invalid storm paths are created. 10 from the atlantic and 6 from the eastern pacific. Currently stored in the 
-database but will cause query errors as the geography is not valid. Mostly caused by consecutive observations of a storm 
-being in the same location.
+* [x] 4 invalid codes found in the pacific file currently mapped to null
+* [x] 16 invalid storm paths are created. 10 from the atlantic and 6 from the eastern pacific. Currently stored in the 
+database but will cause query errors as the geography is not valid. Mostly caused by observations of a storm 
+being in the exact same location.
 * [ ] include pickle of created pandas dataframes in distribution.

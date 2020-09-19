@@ -12,8 +12,8 @@ from sqlalchemy import create_engine
 #%% input parameters: change these paths if you have downloaded the files to a different area
 atlantic_path = "resources//hurdat2-1851-2019-052520.txt"
 pacific_path = "resources//hurdat2-nepac-1949-2019-042320.txt"
-sqlserver = "sqlservername"
-database = "databasename"
+sqlserver = "bhsiairsql03"
+database = "FinancialModuleTesting"
 
 #%% dictionaries to code the identifier and status columns
 record_identifier = {
@@ -96,6 +96,13 @@ def process_file(file_path):
     return file_headers, file_data
 
 
+def create_path(df):
+    if df.shape[0] == 1:
+        return "POINT(" + df["point"] + ")"
+    else:
+        return "(" + df["point"] + ", " + df["next_point"] + ")"
+
+
 def clean_data(events, points):
     """function for cleansing the data"""
     events = pd.DataFrame(
@@ -145,9 +152,7 @@ def clean_data(events, points):
     points["point_time"] = points["year"] + "-" + points["month"] + "-" + points["day"] + "T" \
         + points["hours_UTC"] + ":" + points["minutes_UTC"] + ":00.000Z"
     points["point_time"] = points["point_time"].apply(isoparse)
-    points["path"] = points["longitude"].astype(str) + " " + points["latitude"].astype(str) + " " \
-        + points["max_wind_knots"].astype(str).replace("-99", "NULL") + " " \
-        + points["min_pressure_mb"].astype(str).replace("-999", "NULL")
+    points["point"] = points["longitude"].astype(str) + " " + points["latitude"].astype(str)
     points.drop(
         ["year", "month", "day", "hours_UTC", "minutes_UTC", "latitude", "longitude"],
         axis=1,
@@ -175,12 +180,30 @@ def clean_data(events, points):
         },
         inplace=True
     )
-    events["start_time"] = points.groupby("event_id", sort=False).first()["point_time"].values
-    events["path"] = points.loc[:, ["event_id", "path"]].groupby("event_id", sort=False)["path"].apply(",".join).values
-    events.loc[events["num_points"] == 1, "path"] = "POINT(" + events.loc[events["num_points"] == 1, "path"] + ")"
-    events.loc[events["num_points"] > 1, "path"] = "LINESTRING(" + events.loc[events["num_points"] > 1, "path"] + ")"
+    points["next_point"] = points.groupby("event_id", sort=False)["point"].shift(-1)
+    # construct path segments
+    # drop all segments that have the same start and end point
+    path = points[[
+        "event_id",
+        "point",
+        "next_point",
+        "point_time"
+    ]].drop(points[points["point"] == points["next_point"]].index)
+    # remove any duplicate segments that have the start/end points reversed
+    path["point_set"] = path[["event_id", "point", "next_point"]].apply(frozenset, axis=1)
+    path = path.drop_duplicates(subset="point_set", keep="first")
+    # group the segments by event for processing
+    grouped = path.groupby("event_id", sort=False)
+    # remove any segments that don't have an end point, like the last point in each event,
+    # but keep events with only one point
+    path_text = grouped.apply(create_path).dropna()
+    events["start_time"] = grouped.first()["point_time"].values
+    events["path"] = path_text.groupby("event_id", sort=False).apply(",".join).values
+    events.loc[events["path"].str[0] == "(", "path"] = "MULTILINESTRING(" \
+        + events.loc[events["path"].str[0] == "(", "path"] + ")"
     events.drop(["storm_num", "num_points", "year"], axis=1, inplace=True)
-    points.drop(["path"], axis=1, inplace=True)
+    # remove intermediary calculation columns
+    points.drop(["point", "next_point"], axis=1, inplace=True)
     return events, points
 
 
