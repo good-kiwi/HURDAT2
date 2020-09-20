@@ -12,8 +12,8 @@ from sqlalchemy import create_engine
 #%% input parameters: change these paths if you have downloaded the files to a different area
 atlantic_path = "resources//hurdat2-1851-2019-052520.txt"
 pacific_path = "resources//hurdat2-nepac-1949-2019-042320.txt"
-sqlserver = "bhsiairsql03"
-database = "FinancialModuleTesting"
+sqlserver = "sqlserver"
+database = "databasename"
 
 #%% dictionaries to code the identifier and status columns
 record_identifier = {
